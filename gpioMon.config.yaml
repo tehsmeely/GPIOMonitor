@@ -1,0 +1,17 @@
+daemon:
+    processName: gpioMon
+    pidPath: /var/run
+    host: localhost
+    port: 8282
+    logFile: /media/dataStorage/logs/gpioMon/process.log
+
+readIntervals:
+    temperature: 30
+    door: 0.5
+
+doorMonitor:
+    gpioPin: 3
+    logFile: /media/dataStorage/logs/gpioMon/doorState.log
+
+temperatureMonitor:
+    logFile: /media/dataStorage/logs/gpioMon/temperature.log
