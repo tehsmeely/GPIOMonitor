@@ -5,15 +5,16 @@ import sys, socket, random, os, json, logging, logging.config, threading, time
 #Loaded from config.yaml
 
 #Import Daemon module
-sys.path.append("/home/pi/python/python-daemon")
-from daemon2 import Daemon
+sys.path.append("/home/pi/Python/python-daemon")
+from daemon import Daemon
 
 #Import wiringpi2, requires root!
-import wiringpi2 as wp
+import wiringpi as wp
 
 #Import MCP9808 I2C control script
-sys.path.append("/home/pi/python/")
-from MCP9808_i2c.MCP9808 import MCP9808
+#sys.path.append("/home/pi/Python/")
+#from MCP9808_i2c.MCP9808 import MCP9808
+import Adafruit_MCP9808.MCP9808 as MCP9808
 
 #Load config from YAML
 import yaml
@@ -103,8 +104,12 @@ class SocketServer(Daemon):
         wp.wiringPiSetup() #us wiringPi numbers
         wp.pinMode(CONFIG["doorMonitor"]["gpioPin"], 0)
 
-        self.tempSensor = MCP9808()
-        self.tempSensor.begin()
+        self.tempSensor = MCP9808.MCP9808()
+        print "Begin MCP: ", self.tempSensor.begin()
+        print "initial temp: {}C".format(self.tempSensor.readTempC())
+        t = self.tempSensor._device.readU16BE(0x05)
+        temp = (t & 0x0FFF) / 16.0
+        print "t: {}, temp: {}".format(t, temp)
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
         try:
@@ -138,7 +143,7 @@ class SocketServer(Daemon):
                     conn.close()
                     break
                 resp = self.getStatusSnapshot()
-                conn.sendall(resp)
+                conn.sendall(resp+"\n")
 
             self.opsLog.info("Connection Closed")
         self.sock.close()
@@ -180,7 +185,7 @@ class SocketServer(Daemon):
         return json.dumps(responseDict)
 
 
-validBasicFunctions = ["start", "stop", "restart"]
+validBasicFunctions = ["start", "stop", "restart", "run"]
 
 if __name__ == "__main__":
     pidFile = os.path.join(CONFIG["daemon"]["pidPath"], CONFIG["daemon"]["processName"] + ".pid")
